@@ -1,0 +1,69 @@
+{
+  "name": "waitorwaitorslopplease",
+  "displayName": "WaitorWaitorSlopPlease",
+  "description": "Edit the current file with an instruction and a cursor position.",
+  "version": "0.1.0",
+  "publisher": "tfritzy",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:tfritzy/WaitorWaitorSlopPlease.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:waitorwaitorslopplease.edit",
+    "onCommand:waitorwaitorslopplease.setApiKey",
+    "onCommand:waitorwaitorslopplease.selectModel"
+  ],
+  "main": "./dist/src/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "waitorwaitorslopplease.edit",
+        "title": "WaitorWaitorSlopPlease: Edit at Cursor"
+      },
+      {
+        "command": "waitorwaitorslopplease.setApiKey",
+        "title": "WaitorWaitorSlopPlease: Set OpenRouter API Key"
+      },
+      {
+        "command": "waitorwaitorslopplease.selectModel",
+        "title": "WaitorWaitorSlopPlease: Select Model"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "waitorwaitorslopplease.edit",
+        "key": "shift shift",
+        "when": "editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "WaitorWaitorSlopPlease",
+      "properties": {
+        "waitorwaitorslopplease.model": {
+          "type": "string",
+          "default": "~google/gemini-flash-latest",
+          "description": "OpenRouter model used to edit the current file."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "node -e \"require('fs').rmSync('dist', { recursive: true, force: true })\" && tsc -p .",
+    "check": "npm run compile && node --test dist/test/*.test.js",
+    "package": "npm run compile && vsce package --no-dependencies --allow-missing-repository --skip-license"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}

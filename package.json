@@ -1,8 +1,8 @@
 {
   "name": "waitorwaitorslopplease",
   "displayName": "WaitorWaitorSlopPlease",
-  "description": "Edit the current file with an instruction and a cursor position.",
-  "version": "0.1.0",
+  "description": "Edit the current file using current contents of Git-tracked files as context.",
+  "version": "0.1.1",
   "publisher": "tfritzy",
   "private": true,
   "repository": {

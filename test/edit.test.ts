@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseEdit, requestBody } from '../src/edit';
 
-test('request includes only instruction, cursor, and current file', () => {
-  const body = requestBody('openrouter/auto', 'rename this', { line: 2, column: 3 }, 'a\nb');
+test('request includes the target path, cursor, and current contents of tracked files', () => {
+  const files = [
+    { path: 'src/main.ts', content: 'a\nb', encoding: 'utf8' as const },
+    { path: 'src/helper.ts', content: 'helper', encoding: 'utf8' as const }
+  ];
+  const body = requestBody('openrouter/auto', 'rename this', { line: 2, column: 3 }, 'src/main.ts', files);
   assert.deepEqual(JSON.parse(body.messages[1].content), {
-    instruction: 'rename this', cursor: { line: 2, column: 3 }, file: 'a\nb'
+    instruction: 'rename this', target: { path: 'src/main.ts', cursor: { line: 2, column: 3 } }, files
   });
   assert.equal(body.response_format.type, 'json_schema');
   assert.equal(body.response_format.json_schema.strict, true);

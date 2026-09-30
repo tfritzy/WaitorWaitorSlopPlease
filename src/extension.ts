@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import { performance } from 'node:perf_hooks';
+import * as path from 'node:path';
+import { FileContext, readGitContext } from './context';
 import { Edit, parseEdit, requestBody } from './edit';
 
 const API_KEY_SECRET = 'waitorwaitorslopplease.openrouterApiKey';
@@ -160,6 +162,9 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
   if (!editor) {
     throw new Error('Open a text file first.');
   }
+  if (editor.document.uri.scheme !== 'file') {
+    throw new Error('Open a local Git-tracked file first.');
+  }
 
   // Only the active end of the primary selection is used. Its range is never sent.
   const cursor = editor.selection.active;
@@ -187,6 +192,11 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
 
   const model = selectedModel();
   if (!model) throw new Error('Select a model before editing.');
+  const openText = new Map(vscode.workspace.textDocuments
+    .filter(openDocument => openDocument.uri.scheme === 'file')
+    .map(openDocument => [path.resolve(openDocument.uri.fsPath), openDocument.getText()]));
+  openText.set(path.resolve(document.uri.fsPath), content);
+  const gitContext = await readGitContext(path.resolve(document.uri.fsPath), openText);
   const cursorPosition = {
     line: cursor.line + 1,
     column: cursor.character + 1
@@ -208,7 +218,7 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
           let edit: Edit;
           const startedAt = performance.now();
           try {
-            edit = await requestModelEdit(model, key, instruction.trim(), cursorPosition, content, cursorOffset, cancellationController.signal);
+            edit = await requestModelEdit(model, key, instruction.trim(), cursorPosition, gitContext.targetPath, gitContext.files, content, cursorOffset, cancellationController.signal);
           } catch (error) {
             if (token.isCancellationRequested) return;
             throw new RequestError(error instanceof Error ? error.message : 'The request failed.');
@@ -257,6 +267,8 @@ async function requestModelEdit(
   key: string,
   instruction: string,
   cursor: { line: number; column: number },
+  targetPath: string,
+  files: readonly FileContext[],
   content: string,
   cursorOffset: number,
   signal: AbortSignal
@@ -269,7 +281,7 @@ async function requestModelEdit(
         Authorization: `Bearer ${key}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(requestBody(model, instruction, cursor, content, correction)),
+      body: JSON.stringify(requestBody(model, instruction, cursor, targetPath, files, correction)),
       signal
     });
     if (!response.ok) throw new Error(`${model} returned HTTP ${response.status}.`);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { parseEdit, requestBody } from '../src/edit';
 
-test('request includes the target path, cursor, and current contents of tracked files', () => {
+test('request includes the target path, cursor, and current project file contents', () => {
   const files = [
     { path: 'src/main.ts', content: 'a\nb', encoding: 'utf8' as const },
     { path: 'src/helper.ts', content: 'helper', encoding: 'utf8' as const }

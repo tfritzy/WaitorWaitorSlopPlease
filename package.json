@@ -1,8 +1,8 @@
 {
   "name": "waitorwaitorslopplease",
   "displayName": "WaitorWaitorSlopPlease",
-  "description": "Edit the current file using current contents of Git-tracked files as context.",
-  "version": "0.1.1",
+  "description": "Edit the current file using current contents of non-ignored project files as context.",
+  "version": "0.1.2",
   "publisher": "tfritzy",
   "private": true,
   "repository": {

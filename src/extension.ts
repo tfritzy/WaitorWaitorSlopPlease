@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { performance } from 'node:perf_hooks';
 import * as path from 'node:path';
-import { FileContext, readGitContext } from './context';
+import { FileContext, readProjectContext } from './context';
 import { Edit, parseEdit, requestBody } from './edit';
 
 const API_KEY_SECRET = 'waitorwaitorslopplease.openrouterApiKey';
@@ -163,7 +163,7 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
     throw new Error('Open a text file first.');
   }
   if (editor.document.uri.scheme !== 'file') {
-    throw new Error('Open a local Git-tracked file first.');
+    throw new Error('Open a local project file first.');
   }
 
   // Only the active end of the primary selection is used. Its range is never sent.
@@ -196,7 +196,8 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
     .filter(openDocument => openDocument.uri.scheme === 'file')
     .map(openDocument => [path.resolve(openDocument.uri.fsPath), openDocument.getText()]));
   openText.set(path.resolve(document.uri.fsPath), content);
-  const gitContext = await readGitContext(path.resolve(document.uri.fsPath), openText);
+  const workspaceRoot = vscode.workspace.getWorkspaceFolder(document.uri)?.uri.fsPath;
+  const projectContext = await readProjectContext(path.resolve(document.uri.fsPath), workspaceRoot, openText);
   const cursorPosition = {
     line: cursor.line + 1,
     column: cursor.character + 1
@@ -218,7 +219,7 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
           let edit: Edit;
           const startedAt = performance.now();
           try {
-            edit = await requestModelEdit(model, key, instruction.trim(), cursorPosition, gitContext.targetPath, gitContext.files, content, cursorOffset, cancellationController.signal);
+            edit = await requestModelEdit(model, key, instruction.trim(), cursorPosition, projectContext.targetPath, projectContext.files, content, cursorOffset, cancellationController.signal);
           } catch (error) {
             if (token.isCancellationRequested) return;
             throw new RequestError(error instanceof Error ? error.message : 'The request failed.');

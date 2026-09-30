@@ -31,19 +31,15 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
     vscode.commands.registerCommand('waitorwaitorslopplease.edit', async () => {
-      for (;;) {
-        try {
-          await editAtCursor(context);
+      try {
+        await editAtCursor(context);
+      } catch (error) {
+        if (error instanceof SaveError) {
+          await retrySave(error.document, error.winnerMessage);
           return;
-        } catch (error) {
-          if (error instanceof SaveError) {
-            await retrySave(error.document, error.winnerMessage);
-            return;
-          }
-          const message = error instanceof Error ? error.message : 'Unknown error';
-          const action = await vscode.window.showErrorMessage(`WaitorWaitorSlopPlease: ${message}`, 'Retry');
-          if (action !== 'Retry') return;
         }
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        await vscode.window.showErrorMessage(`WaitorWaitorSlopPlease: ${message}`);
       }
     })
   );
@@ -203,9 +199,11 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
     column: cursor.character + 1
   };
   const cursorOffset = document.offsetAt(cursor);
+  // Retry the captured request against its original document, even if the
+  // notification or another editor has taken focus. Never reuse a stale edit.
   for (;;) {
-    if (document.isClosed || document.version !== version || vscode.window.activeTextEditor !== editor) {
-      throw new Error('The active file changed. Run the command again.');
+    if (document.isClosed || document.version !== version) {
+      throw new Error('The target file changed or closed. Run the command again.');
     }
     try {
       await vscode.window.withProgress({
@@ -225,8 +223,8 @@ async function editAtCursor(context: vscode.ExtensionContext): Promise<void> {
             throw new RequestError(error instanceof Error ? error.message : 'The request failed.');
           }
           if (token.isCancellationRequested) return;
-          if (document.isClosed || document.version !== version || vscode.window.activeTextEditor !== editor) {
-            throw new Error('The active file changed while waiting. Run the command again.');
+          if (document.isClosed || document.version !== version) {
+            throw new Error('The target file changed or closed while waiting. Run the command again.');
           }
           const range = new vscode.Range(
             document.positionAt(edit.startOffset),

@@ -2,7 +2,7 @@
   "name": "waitorwaitorslopplease",
   "displayName": "WaitorWaitorSlopPlease",
   "description": "Edit the current file using current contents of non-ignored project files as context.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "tfritzy",
   "private": true,
   "repository": {
